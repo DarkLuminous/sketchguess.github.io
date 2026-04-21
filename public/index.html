@@ -1,247 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>SketchGuess — Draw & Guess with Character!</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  :root {
-    --bg: #0f0e17;
-    --surface: #1a1830;
-    --card: #221f3b;
-    --border: #2e2a50;
-    --accent: #ff6b6b;
-    --accent2: #ffd166;
-    --accent3: #06d6a0;
-    --accent4: #118ab2;
-    --text: #fffffe;
-    --muted: #a8a4c8;
-    --radius: 16px;
-    --shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
-
-  body {
-    font-family: 'Nunito', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-    background-image: radial-gradient(ellipse at 20% 20%, rgba(255,107,107,0.08) 0%, transparent 60%),
-                      radial-gradient(ellipse at 80% 80%, rgba(17,138,178,0.08) 0%, transparent 60%);
-  }
-
-  h1, h2, h3 { font-family: 'Fredoka One', cursive; }
-
-  /* LOBBY */
-  #lobby {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 24px;
-  }
-  .logo {
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(2.5rem, 8vw, 5rem);
-    background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 4px 24px rgba(255,107,107,0.4));
-    margin-bottom: 8px;
-    animation: float 3s ease-in-out infinite;
-  }
-  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-  .tagline { color: var(--muted); font-size: 1rem; font-weight: 600; letter-spacing: 2px; margin-bottom: 40px; }
-  .lobby-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 36px 40px;
-    width: 100%;
-    max-width: 480px;
-    box-shadow: var(--shadow);
-  }
-  .input-group { margin-bottom: 18px; }
-  label { display: block; font-weight: 700; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
-  input[type=text] {
-    width: 100%;
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    font-family: 'Nunito', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    padding: 12px 16px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  input[type=text]:focus { border-color: var(--accent); }
-
-  /* Character selector */
-  .char-selector {
-    background: var(--surface);
-    border-radius: 14px;
-    padding: 12px;
-    margin-bottom: 20px;
-  }
-  .char-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    margin-top: 8px;
-  }
-  .char-option {
-    background: var(--card);
-    border: 2px solid var(--border);
-    border-radius: 60px;
-    font-size: 1.8rem;
-    text-align: center;
-    padding: 6px;
-    cursor: pointer;
-    transition: all 0.1s ease;
-  }
-  .char-option.active {
-    border-color: var(--accent2);
-    background: rgba(255,209,102,0.2);
-    transform: scale(1.05);
-    box-shadow: 0 0 12px rgba(255,209,102,0.4);
-  }
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--muted);
-    font-size: 0.7rem;
-    margin: 20px 0;
-  }
-  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .btn {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.1rem;
-    transition: transform 0.15s, box-shadow 0.15s;
-  }
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.3); }
-  .btn-primary { background: linear-gradient(135deg, var(--accent), #ff4757); color: #fff; margin-bottom: 12px; }
-  .btn-secondary { background: linear-gradient(135deg, var(--accent4), #0a6e8a); color: #fff; }
-  .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
-  .btn-success { background: linear-gradient(135deg, var(--accent3), #05a87e); color: #fff; }
-  .error-msg { color: var(--accent); font-size: 0.85rem; font-weight: 700; text-align: center; margin-top: 12px; min-height: 20px; }
-
-  /* WAITING ROOM */
-  #waiting {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 24px;
-    gap: 24px;
-  }
-  .room-code-display { background: var(--card); border: 2px dashed var(--accent2); border-radius: var(--radius); padding: 20px 40px; text-align: center; }
-  .room-code-display .code { font-family: 'Fredoka One', cursive; font-size: 3rem; color: var(--accent2); letter-spacing: 8px; }
-  .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; width: 100%; max-width: 600px; }
-  .player-chip { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-weight: 700; }
-  .player-chip.host { border-color: var(--accent2); }
-  .player-avatar { font-size: 1.8rem; }
-
-  /* GAME SCREEN */
-  #game {
-    display: none;
-    height: 100vh;
-    grid-template-columns: 200px 1fr 240px;
-    grid-template-rows: 60px 1fr;
-  }
-  .topbar {
-    grid-column: 1 / -1;
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 16px;
-  }
-  .room-badge { background: var(--surface); padding: 6px 14px; border-radius: 40px; font-size: 0.8rem; font-weight: 800; color: var(--accent2); letter-spacing: 1px; }
-  .word-display { flex: 1; text-align: center; font-family: 'Fredoka One', cursive; font-size: 1.4rem; letter-spacing: 4px; color: var(--accent2); }
-  .round-info, .timer-ring { font-weight: bold; }
-  .sidebar-left { background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px; }
-  .sidebar-left h3 { font-size: 0.7rem; color: var(--muted); margin-bottom: 12px; }
-  .player-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; margin-bottom: 6px; font-size: 0.85rem; font-weight: 700; }
-  .player-row.drawing { background: rgba(255,107,107,0.2); border-left: 4px solid var(--accent); }
-  .player-avatar-sm { font-size: 1.3rem; width: 32px; text-align: center; }
-  .score { margin-left: auto; color: var(--accent2); }
-  .medal { font-size: 1rem; margin-right: 4px; }
-
-  /* FLOATING ARTIST INDICATOR */
-  .floating-artist {
-    position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--card);
-    backdrop-filter: blur(12px);
-    border: 2px solid var(--accent2);
-    border-radius: 60px;
-    padding: 8px 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    z-index: 25;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-    animation: glowPulse 1.2s infinite alternate;
-  }
-  @keyframes glowPulse { 0% { box-shadow: 0 0 5px var(--accent2); } 100% { box-shadow: 0 0 20px var(--accent); } }
-  .artist-avatar { font-size: 2rem; }
-  .artist-name { font-family: 'Fredoka One', cursive; color: var(--accent2); }
-
-  .canvas-wrap { background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-  #drawing-canvas { background: #fff; border-radius: 12px; cursor: crosshair; box-shadow: 0 0 0 4px var(--border); touch-action: none; }
-  .toolbar { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--card); border-radius: 50px; padding: 8px 18px; display: flex; gap: 10px; }
-  .toolbar.hidden { display: none; }
-  .color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-  .color-swatch.active { border-color: white; transform: scale(1.1); }
-  .size-btn { background: var(--muted); border-radius: 50%; border: none; cursor: pointer; transition: 0.1s; }
-  .size-btn.active { background: var(--accent); transform: scale(1.2); }
-  .tool-btn { background: none; border: 1px solid var(--border); border-radius: 8px; color: white; padding: 4px 12px; cursor: pointer; }
-
-  .sidebar-right { background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-  .chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .chat-msg { padding: 6px 10px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; word-break: break-word; }
-  .chat-msg.system { background: rgba(255,209,102,0.1); color: var(--accent2); text-align: center; }
-  .chat-msg.correct { background: rgba(6,214,160,0.2); border-left: 3px solid var(--accent3); }
-  .chat-input-wrap { padding: 10px; display: flex; gap: 8px; border-top: 1px solid var(--border); }
-  .chat-input-wrap input { flex: 1; background: var(--card); border: none; padding: 8px; border-radius: 20px; color: white; }
-  .chat-input-wrap button { background: var(--accent); border: none; border-radius: 20px; padding: 8px 16px; cursor: pointer; }
-
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
-  .overlay.show { display: flex; }
-  .overlay-card { background: var(--card); border-radius: var(--radius); padding: 36px; text-align: center; max-width: 420px; width: 90%; }
-  .exit-game-btn { background: rgba(231,76,60,0.8); border: none; border-radius: 40px; padding: 6px 16px; font-weight: bold; cursor: pointer; color: white; margin-left: auto; }
-
-  @media (max-width: 700px) { #game { grid-template-columns: 0 1fr 0; } .sidebar-left, .sidebar-right { display: none; } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SketchGuess — Draw &amp; Guess with Character!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
+<!-- Confetti canvas (fixed overlay) -->
 <canvas id="confetti" style="position:fixed; inset:0; pointer-events:none; z-index:200"></canvas>
 
-<!-- LOBBY -->
+<!-- ── LOBBY ────────────────────────────────────────────────────────────────── -->
 <section id="lobby">
   <div class="logo">✏️ SketchGuess</div>
   <div class="tagline">Draw it. Guess it. Win it.</div>
@@ -250,239 +22,127 @@
       <label>Your Name</label>
       <input type="text" id="player-name" placeholder="Enter your name…" maxlength="16">
     </div>
+
     <div class="char-selector">
       <label>🎭 Your Character</label>
       <div class="char-grid" id="avatar-selector"></div>
     </div>
+
     <button class="btn btn-primary" onclick="createRoom()">🎨 Create New Room</button>
+
     <div class="divider">OR</div>
+
     <div class="input-group">
       <label>Room Code</label>
       <input type="text" id="room-code-input" placeholder="e.g. AB12CD" maxlength="6" style="text-transform:uppercase">
     </div>
     <button class="btn btn-secondary" onclick="joinRoom()">🚪 Join Room</button>
+
     <div class="error-msg" id="lobby-error"></div>
   </div>
 </section>
 
-<!-- WAITING ROOM -->
+<!-- ── WAITING ROOM ──────────────────────────────────────────────────────────── -->
 <section id="waiting">
   <div class="logo" style="font-size:2rem;">✏️ SketchGuess</div>
   <div class="room-code-display">
     <small>Room Code — share with friends!</small>
     <div class="code" id="waiting-code">------</div>
   </div>
-  <div style="color:var(--muted); font-weight:700;">Players: <span id="player-count">1</span>/10</div>
+  <div style="color:var(--muted); font-weight:700;">
+    Players: <span id="player-count">1</span>/10
+  </div>
   <div class="players-grid" id="waiting-players"></div>
   <div style="display:flex; gap:12px;">
-    <button class="btn btn-success btn-sm" id="start-btn" onclick="startGame()" style="display:none">▶ Start Game</button>
-    <button class="btn btn-danger btn-sm" onclick="exitToLobby()">🚪 Leave Room</button>
+    <button class="btn btn-success" id="start-btn" onclick="startGame()" style="display:none">▶ Start Game</button>
+    <button class="btn btn-danger"  onclick="exitToLobby()">🚪 Leave Room</button>
   </div>
 </section>
 
-<!-- GAME SCREEN -->
+<!-- ── GAME SCREEN ───────────────────────────────────────────────────────────── -->
 <div id="game">
   <header class="topbar">
-    <div class="logo-sm">✏️ SG</div>
+    <div style="font-family:'Fredoka One',cursive; font-size:1.2rem;">✏️ SG</div>
     <div class="room-badge" id="game-room-code">ROOM: ----</div>
     <div class="round-info">Round <span id="top-round">1</span></div>
     <div class="word-display" id="word-display">_ _ _ _ _</div>
-    <div class="timer-ring"><svg width="44" height="44"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--border)" stroke-width="4"/><circle id="timer-arc" cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="4" stroke-dasharray="113" stroke-dashoffset="0"/></svg><div class="timer-text" id="timer-text">80</div></div>
+    <div class="timer-ring">
+      <svg width="44" height="44">
+        <circle cx="22" cy="22" r="18" fill="none" stroke="var(--border)" stroke-width="4"/>
+        <circle id="timer-arc" cx="22" cy="22" r="18" fill="none"
+                stroke="var(--accent)" stroke-width="4"
+                stroke-dasharray="113" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-text" id="timer-text">50</div>
+    </div>
     <button class="exit-game-btn" onclick="exitToLobby()">🚪 Exit</button>
   </header>
+
   <aside class="sidebar-left">
-    <h3>🏆 LEADERBOARD (TOP 3 HIGHLIGHTED)</h3>
+    <h3>🏆 LEADERBOARD</h3>
     <div id="leaderboard"></div>
   </aside>
+
   <main class="canvas-wrap" id="canvas-wrap">
-    <div id="floating-artist" class="floating-artist" style="display: none;">
+    <div id="floating-artist" class="floating-artist" style="display:none;">
       <span class="artist-avatar" id="artist-avatar">🎨</span>
-      <span class="artist-name" id="artist-name">Drawing...</span>
+      <span class="artist-name"  id="artist-name">Drawing...</span>
     </div>
     <canvas id="drawing-canvas"></canvas>
     <div class="toolbar" id="toolbar">
-      <div id="color-palette" style="display:flex; gap:6px;"></div>
-      <div id="size-btns" style="display:flex; gap:6px;"></div>
+      <div id="color-palette"  style="display:flex; gap:6px;"></div>
+      <div id="size-btns"      style="display:flex; gap:6px;"></div>
       <button class="tool-btn" id="eraser-btn" onclick="toggleEraser()">⌫ Eraser</button>
       <button class="tool-btn" onclick="clearCanvas()">🗑 Clear</button>
     </div>
   </main>
+
   <aside class="sidebar-right">
     <h3>💬 Guesses</h3>
     <div class="chat-messages" id="chat-messages"></div>
-    <div class="chat-input-wrap"><input type="text" id="guess-input" placeholder="Type your guess…" onkeydown="if(event.key==='Enter')sendGuess()"><button onclick="sendGuess()">→</button></div>
+    <div class="chat-input-wrap">
+      <input type="text" id="guess-input" placeholder="Type your guess…"
+             onkeydown="if(event.key==='Enter') sendGuess()">
+      <button onclick="sendGuess()">→</button>
+    </div>
   </aside>
+
+  <!-- Mobile-only bottom tab bar -->
+  <nav class="mobile-tabs" id="mobile-tabs">
+    <button class="mobile-tab active" id="tab-canvas" onclick="switchMobileTab('canvas')">
+      <span class="tab-icon">🎨</span>Canvas
+    </button>
+    <button class="mobile-tab" id="tab-scores" onclick="switchMobileTab('scores')">
+      <span class="tab-icon">🏆</span>Scores
+    </button>
+    <button class="mobile-tab" id="tab-chat" onclick="switchMobileTab('chat')">
+      <span class="tab-icon">💬</span>Guesses
+    </button>
+  </nav>
 </div>
 
-<!-- Round Overlay -->
-<div class="overlay" id="round-end-overlay"><div class="overlay-card"><h2>⏱ Round Over!</h2><p>The word was…</p><div class="word-reveal" id="revealed-word"></div></div></div>
-<div class="overlay" id="gameover-overlay"><div class="overlay-card"><h2>🏆 Game Over!</h2><ul class="scoreboard" id="final-scoreboard"></ul><button class="btn btn-success" onclick="newGame()">🔄 New Game</button><button class="btn btn-danger" onclick="exitToLobby()">🏠 Leave Room</button></div></div>
+<!-- ── OVERLAYS ──────────────────────────────────────────────────────────────── -->
+<div class="overlay" id="round-end-overlay">
+  <div class="overlay-card">
+    <h2>⏱ Round Over!</h2>
+    <p>The word was…</p>
+    <div id="revealed-word" style="font-family:'Fredoka One',cursive; font-size:2rem; color:var(--accent2); margin-top:12px;"></div>
+  </div>
+</div>
 
+<div class="overlay" id="gameover-overlay">
+  <div class="overlay-card">
+    <h2>🏆 Game Over!</h2>
+    <ul class="scoreboard" id="final-scoreboard" style="list-style:none; margin:20px 0;"></ul>
+    <button class="btn btn-success" onclick="newGame()"     style="margin-bottom:10px;">🔄 New Game</button>
+    <button class="btn btn-danger"  onclick="exitToLobby()">🏠 Leave Room</button>
+  </div>
+</div>
+
+<!-- Socket.io client (served by server automatically) -->
 <script src="/socket.io/socket.io.js"></script>
-<script>
-  // ------------------- GLOBAL STATE --------------------
-  let socket;
-  let myId, myRoomCode, isHost = false, isDrawing = false;
-  let currentWord = null;
-  let canvas, ctx;
-  let drawingFlag = false, lastX = 0, lastY = 0;
-  let currentColor = '#000000', currentSize = 5, eraserMode = false;
-  let selectedAvatar = '🐼';  // default
-  const AVATAR_LIST = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐸','🐙','🦄','🐧','🐦','🐌','🎃','🤖','👻','⭐','🌈'];
-  
-  // ------------------- AVATAR PICKER -------------------
-  function buildAvatarPicker() {
-    const container = document.getElementById('avatar-selector');
-    if (!container) return;
-    container.innerHTML = '';
-    AVATAR_LIST.forEach(emoji => {
-      const div = document.createElement('div');
-      div.className = 'char-option' + (selectedAvatar === emoji ? ' active' : '');
-      div.textContent = emoji;
-      div.onclick = () => {
-        selectedAvatar = emoji;
-        document.querySelectorAll('.char-option').forEach(el => el.classList.remove('active'));
-        div.classList.add('active');
-      };
-      container.appendChild(div);
-    });
-  }
-  
-  // ------------------- SOCKET & ROOM LOGIC -------------------
-  function initSocket() {
-    if (socket) socket.disconnect();
-    socket = io();
-    socket.on('connect', () => { myId = socket.id; });
-    socket.on('room-joined', ({ code, playerId, room }) => {
-      myId = playerId;
-      myRoomCode = code;
-      isHost = room.players.find(p => p.id === myId)?.id === room.players[0]?.id;
-      if (room.state !== 'lobby') {
-        showGame();
-        updateGameState(room);
-        isDrawing = (room.currentDrawer === myId);
-        setupDrawingMode();
-        updateFloatingArtist(room);
-        if (isDrawing) showDrawerHintTemporary();
-        else document.getElementById('draw-waiting')?.remove();
-        socket.emit('request-history');
-      } else showWaiting(room);
-    });
-    socket.on('player-joined', ({ player, room }) => { updateWaiting(room); addSystemMsg(`${player.name} joined!`); if (document.getElementById('game').style.display === 'grid') updateLeaderboardUI(room.players); });
-    socket.on('player-left', ({ name, room }) => { updateWaiting(room); addSystemMsg(`${name} left.`); if (document.getElementById('game').style.display === 'grid') updateLeaderboardUI(room.players); });
-    socket.on('new-host', ({ playerId }) => { if (playerId === myId) { isHost = true; document.getElementById('start-btn').style.display = 'block'; addSystemMsg('You are the new host!'); } });
-    socket.on('round-start', (room) => {
-      hideOverlays(); showGame();
-      isDrawing = (room.currentDrawer === myId);
-      updateGameState(room);
-      setupDrawingMode();
-      updateFloatingArtist(room);
-      if (isDrawing) { addSystemMsg('🎨 You are drawing!'); showDrawerHintTemporary(); if (currentWord) document.getElementById('word-display').innerHTML = `✏️ DRAW: ${currentWord.toUpperCase()}`; }
-      else { addSystemMsg(`✏️ ${room.players.find(p => p.id === room.currentDrawer)?.name || 'Someone'} is drawing!`); }
-    });
-    socket.on('your-word', ({ word }) => { currentWord = word; document.getElementById('word-display').innerHTML = `<span style="font-size:0.7rem;">DRAW THIS ✏️</span><br>${word.toUpperCase()}`; });
-    socket.on('word-hint', ({ maskedWord }) => { if (!isDrawing) document.getElementById('word-display').textContent = maskedWord.toUpperCase(); });
-    socket.on('draw', (data) => { if (!isDrawing) renderStroke(data); });
-    socket.on('clear-canvas', () => { if (ctx) ctx.fillRect(0,0,canvas.width,canvas.height); });
-    socket.on('draw-history', ({ history }) => { history.forEach(d => renderStroke(d)); });
-    socket.on('timer', ({ timeLeft }) => updateTimer(timeLeft));
-    socket.on('correct-guess', ({ playerId, name, players }) => { updateLeaderboardUI(players); addSystemMsg(`✅ ${name} guessed correctly!`, 'correct'); if (playerId === myId) triggerConfetti(); });
-    socket.on('chat', ({ name, message, isClose }) => addChatMsg(name, message, false, isClose));
-    socket.on('round-end', ({ word, players }) => { document.getElementById('revealed-word').textContent = word.toUpperCase(); document.getElementById('round-end-overlay').classList.add('show'); updateLeaderboardUI(players); isDrawing = false; setupDrawingMode(); updateFloatingArtist(null); });
-    socket.on('game-over', ({ players }) => { const sb = document.getElementById('final-scoreboard'); sb.innerHTML = players.map((p,i) => `<li><span class="rank">${['🥇','🥈','🥉'][i]||(i+1)+'.'}</span> <span>${p.name}</span> <strong>${p.score}</strong></li>`).join(''); document.getElementById('gameover-overlay').classList.add('show'); triggerConfetti(); });
-    socket.on('game-reset', ({ room }) => { hideOverlays(); showWaiting(room); addSystemMsg('New game ready!'); });
-    socket.on('error', ({ message }) => showError(message));
-  }
-  
-  function createRoom() { const name = document.getElementById('player-name').value.trim(); if (!name) return showError('Enter name'); if(!selectedAvatar) selectedAvatar='🐼'; initSocket(); socket.emit('create-room', { name, avatar: selectedAvatar }); isHost = true; }
-  function joinRoom() { const name = document.getElementById('player-name').value.trim(); const code = document.getElementById('room-code-input').value.trim().toUpperCase(); if (!name || !code) return showError('Name & code required'); initSocket(); socket.emit('join-room', { code, name, avatar: selectedAvatar }); }
-  function showError(msg) { const el = document.getElementById('lobby-error'); if(el) { el.textContent = msg; setTimeout(()=>el.textContent='',3000); } }
-  function exitToLobby() { if(socket) socket.disconnect(); location.reload(); }
-  function newGame() { if(isHost) socket.emit('new-game'); else addSystemMsg('Only host can start new game.'); }
-  function startGame() { socket.emit('start-game'); }
-  
-  function showWaiting(room) {
-    document.getElementById('lobby').style.display = 'none';
-    document.getElementById('waiting').style.display = 'flex';
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('waiting-code').textContent = room.code;
-    document.getElementById('start-btn').style.display = isHost ? 'block' : 'none';
-    const grid = document.getElementById('waiting-players');
-    grid.innerHTML = room.players.map(p => `<div class="player-chip ${p.id === room.players[0]?.id ? 'host' : ''}"><div class="player-avatar">${p.avatar || '🐼'}</div><span>${escapeHtml(p.name)}</span>${p.id === room.players[0]?.id ? '👑' : ''}</div>`).join('');
-    document.getElementById('player-count').textContent = room.players.length;
-  }
-  
-  function showGame() {
-    document.getElementById('waiting').style.display = 'none';
-    document.getElementById('lobby').style.display = 'none';
-    document.getElementById('game').style.display = 'grid';
-    initCanvas();
-    if(myRoomCode) document.getElementById('game-room-code').textContent = `ROOM: ${myRoomCode}`;
-  }
-  
-  function updateGameState(room) {
-    document.getElementById('top-round').textContent = room.round;
-    if(!isDrawing && room.maskedWord) document.getElementById('word-display').textContent = room.maskedWord.toUpperCase();
-    updateLeaderboardUI(room.players);
-    updateTimer(room.timeLeft);
-  }
-  
-  function updateLeaderboardUI(players) {
-    const sorted = [...players].sort((a,b)=>b.score - a.score);
-    const container = document.getElementById('leaderboard');
-    container.innerHTML = sorted.map((p,idx) => {
-      let medal = '';
-      if(idx === 0) medal = '🥇 ';
-      else if(idx === 1) medal = '🥈 ';
-      else if(idx === 2) medal = '🥉 ';
-      return `<div class="player-row ${p.isDrawing ? 'drawing' : ''}" style="${idx<3 ? 'background:rgba(255,209,102,0.1); border-left:3px solid var(--accent2);' : ''}">
-        <div class="player-avatar-sm">${p.avatar || '🎨'}</div>
-        <span>${medal}${escapeHtml(p.name)}</span>
-        ${p.isDrawing ? '<span class="drawing-badge" style="font-size:0.7rem;">✏️</span>' : ''}
-        <span class="score">${p.score}</span>
-      </div>`;
-    }).join('');
-  }
-  
-  function updateFloatingArtist(room) {
-    const floatingDiv = document.getElementById('floating-artist');
-    if(!floatingDiv) return;
-    if(room && room.currentDrawer) {
-      const drawer = room.players.find(p => p.id === room.currentDrawer);
-      if(drawer) {
-        document.getElementById('artist-avatar').textContent = drawer.avatar || '🎨';
-        document.getElementById('artist-name').textContent = `${drawer.name} is drawing!`;
-        floatingDiv.style.display = 'flex';
-        return;
-      }
-    }
-    floatingDiv.style.display = 'none';
-  }
-  
-  function setupDrawingMode() { const toolbar = document.getElementById('toolbar'); if(toolbar) toolbar.classList.toggle('hidden', !isDrawing); if(canvas) canvas.style.cursor = isDrawing ? 'crosshair' : 'default'; }
-  function showDrawerHintTemporary() { const banner = document.createElement('div'); banner.className = 'draw-waiting'; banner.style.position='absolute'; banner.style.bottom='70px'; banner.style.background='var(--accent)'; banner.style.padding='8px 20px'; banner.style.borderRadius='40px'; banner.innerText='✏️ You are the artist! Draw the word!'; document.querySelector('.canvas-wrap')?.appendChild(banner); setTimeout(()=>banner.remove(),3000); }
-  
-  // canvas methods
-  function initCanvas() { canvas = document.getElementById('drawing-canvas'); ctx = canvas.getContext('2d'); resizeCanvas(); window.addEventListener('resize', resizeCanvas); buildToolbarUI(); canvas.addEventListener('pointerdown', startDraw); canvas.addEventListener('pointermove', doDraw); canvas.addEventListener('pointerup', endDraw); socket.emit('request-history'); }
-  function resizeCanvas() { const wrap = document.getElementById('canvas-wrap'); const w = wrap.clientWidth - 32; const h = wrap.clientHeight - 90; const size = Math.min(w, h, 700); canvas.width = size; canvas.height = Math.round(size * 0.65); canvas.style.width = canvas.width+'px'; canvas.style.height = canvas.height+'px'; ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height); }
-  function getPos(e) { const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height; return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY }; }
-  function startDraw(e) { if(!isDrawing) return; drawingFlag=true; const pos=getPos(e); lastX=pos.x; lastY=pos.y; e.preventDefault(); }
-  function doDraw(e) { if(!drawingFlag||!isDrawing) return; const pos=getPos(e); const data={ x0:lastX, y0:lastY, x1:pos.x, y1:pos.y, color: eraserMode?'#ffffff':currentColor, size: eraserMode?currentSize*3:currentSize }; renderStroke(data); socket.emit('draw', data); lastX=pos.x; lastY=pos.y; e.preventDefault(); }
-  function endDraw() { drawingFlag=false; }
-  function renderStroke(d) { ctx.beginPath(); ctx.moveTo(d.x0,d.y0); ctx.lineTo(d.x1,d.y1); ctx.strokeStyle=d.color; ctx.lineWidth=d.size; ctx.lineCap='round'; ctx.stroke(); }
-  function clearCanvas() { ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height); socket.emit('clear-canvas'); }
-  function toggleEraser() { eraserMode = !eraserMode; document.getElementById('eraser-btn')?.classList.toggle('active', eraserMode); }
-  function buildToolbarUI() { const COLORS = ['#000000','#ffffff','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4']; const paletteDiv = document.getElementById('color-palette'); paletteDiv.innerHTML=''; COLORS.forEach(c=>{ const swatch=document.createElement('div'); swatch.className='color-swatch'+(c===currentColor?' active':''); swatch.style.backgroundColor=c; swatch.onclick=()=>{ currentColor=c; eraserMode=false; document.getElementById('eraser-btn')?.classList.remove('active'); document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active')); swatch.classList.add('active'); }; paletteDiv.appendChild(swatch); }); const sizes=[3,7,12]; const sizeDiv=document.getElementById('size-btns'); sizeDiv.innerHTML=''; sizes.forEach((sz,i)=>{ const btn=document.createElement('button'); btn.className='size-btn'+(sz===currentSize?' active':''); btn.style.width=`${16+i*8}px`; btn.style.height=`${16+i*8}px`; btn.style.background='var(--muted)'; btn.onclick=()=>{ currentSize=sz; document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }; sizeDiv.appendChild(btn); }); }
-  function updateTimer(t) { if(t===undefined) t=0; document.getElementById('timer-text').innerText=t; const max=80; const frac=t/max; const circ=2*Math.PI*18; document.getElementById('timer-arc').setAttribute('stroke-dashoffset', circ*(1-frac)); }
-  function sendGuess() { const input = document.getElementById('guess-input'); const msg = input.value.trim(); if(msg) { socket.emit('guess', { message: msg }); input.value = ''; } }
-  function addChatMsg(name, message, correct=false, isClose=false) { const box = document.getElementById('chat-messages'); const div = document.createElement('div'); div.className = `chat-msg ${correct?'correct':''} ${isClose?'close':''}`; div.innerHTML = `<span class="sender">${escapeHtml(name)}:</span> ${escapeHtml(message)}${isClose?' 🔥 close!':''}`; box.appendChild(div); box.scrollTop = box.scrollHeight; }
-  function addSystemMsg(msg) { const box = document.getElementById('chat-messages'); if(box){ const div=document.createElement('div'); div.className='chat-msg system'; div.innerText=msg; box.appendChild(div); box.scrollTop=box.scrollHeight; } }
-  function hideOverlays() { document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show')); }
-  function triggerConfetti() { const cc=document.getElementById('confetti'); const cx=cc.getContext('2d'); cc.width=window.innerWidth; cc.height=window.innerHeight; const parts=Array.from({length:100},()=>({ x:Math.random()*cc.width, y:Math.random()*-cc.height, r:Math.random()*6+4, d:Math.random()*2+1, color:`hsl(${Math.random()*360},70%,60%)`, tilt:0 })); let frame=0; function draw(){ cx.clearRect(0,0,cc.width,cc.height); parts.forEach(p=>{ p.y+=p.d+1.5; cx.fillStyle=p.color; cx.beginPath(); cx.ellipse(p.x+p.tilt,p.y,p.r,p.r/2,0,0,Math.PI*2); cx.fill(); }); frame++; if(frame<150) requestAnimationFrame(draw); else cx.clearRect(0,0,cc.width,cc.height); } draw(); }
-  function escapeHtml(s) { return String(s).replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-  buildAvatarPicker();
-  window.createRoom=createRoom; window.joinRoom=joinRoom; window.startGame=startGame; window.leaveRoom=exitToLobby; window.exitToLobby=exitToLobby; window.newGame=newGame; window.sendGuess=sendGuess; window.clearCanvas=clearCanvas; window.toggleEraser=toggleEraser;
-</script>
+<!-- Game logic -->
+<script src="/game.js"></script>
+
 </body>
 </html>
-```
