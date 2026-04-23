@@ -61,6 +61,7 @@ function initSocket() {
       updateGameState(room);
       isDrawing = (room.currentDrawer === myId);
       setupDrawingMode();
+      setupChatMode();
       updateFloatingArtist(room);
       if (isDrawing) showDrawerHintTemporary();
       socket.emit('request-history');
@@ -99,6 +100,7 @@ function initSocket() {
     isDrawing = (room.currentDrawer === myId);
     updateGameState(room);
     setupDrawingMode();
+    setupChatMode();
     updateFloatingArtist(room);
 
     if (isDrawing) {
@@ -145,6 +147,7 @@ function initSocket() {
     updateLeaderboardUI(players);
     isDrawing = false;
     setupDrawingMode();
+    setupChatMode();
     updateFloatingArtist(null);
   });
 
@@ -279,6 +282,26 @@ function setupDrawingMode() {
   if (canvas) canvas.style.cursor = isDrawing ? 'crosshair' : 'default';
 }
 
+// Disable chat input for the drawer — they know the word so guessing makes no sense
+function setupChatMode() {
+  const input  = document.getElementById('guess-input');
+  const btn    = document.querySelector('.chat-input-wrap button');
+  const wrap   = document.querySelector('.chat-input-wrap');
+  if (!input) return;
+
+  if (isDrawing) {
+    input.disabled    = true;
+    input.placeholder = '🎨 You are drawing — no guessing!';
+    if (btn)  btn.disabled  = true;
+    if (wrap) wrap.style.opacity = '0.4';
+  } else {
+    input.disabled    = false;
+    input.placeholder = 'Type your guess…';
+    if (btn)  btn.disabled  = false;
+    if (wrap) wrap.style.opacity = '1';
+  }
+}
+
 function showDrawerHintTemporary() {
   const banner = document.createElement('div');
   banner.style.cssText = 'position:absolute; bottom:70px; background:var(--accent); padding:8px 20px; border-radius:40px;';
@@ -303,15 +326,34 @@ function initCanvas() {
 
 function resizeCanvas() {
   const wrap = document.getElementById('canvas-wrap');
-  const w = wrap.clientWidth - 32;
-  const h = wrap.clientHeight - 90;
-  const size = Math.min(w, h, 700);
-  canvas.width = size;
-  canvas.height = Math.round(size * 0.65);
-  canvas.style.width  = canvas.width  + 'px';
-  canvas.style.height = canvas.height + 'px';
+  const wrapW = wrap.clientWidth;
+  const wrapH = wrap.clientHeight;
+
+  // On mobile the wrap can be very short — use its real dimensions.
+  // Give 60px headroom for the floating toolbar at the bottom.
+  const maxW = wrapW - 16;
+  const maxH = wrapH - 60;
+
+  // Keep a 3:2 aspect ratio; never exceed 700px wide
+  let w = Math.min(maxW, 700);
+  let h = Math.round(w * (2 / 3));
+
+  // If height doesn't fit, constrain by height instead
+  if (h > maxH) {
+    h = maxH;
+    w = Math.round(h * (3 / 2));
+  }
+
+  // Don't let canvas go below a usable minimum
+  w = Math.max(w, 100);
+  h = Math.max(h, 60);
+
+  canvas.width  = w;
+  canvas.height = h;
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, w, h);
 }
 
 function getPos(e) {
@@ -330,6 +372,8 @@ function startDraw(e) {
   e.preventDefault();
 }
 
+let lastEmitTime = 0;
+
 function doDraw(e) {
   if (!drawingFlag || !isDrawing) return;
   const pos = getPos(e);
@@ -339,7 +383,14 @@ function doDraw(e) {
     size: eraserMode ? currentSize * 3 : currentSize
   };
   renderStroke(data);
-  socket.emit('draw', data); // CS323: message passing — stroke sent to server, broadcast to peers
+
+  // Throttle socket emits to ~60fps — prevents flooding the server on mobile
+  const now = Date.now();
+  if (now - lastEmitTime >= 16) {
+    socket.emit('draw', data); // CS323: message passing — stroke sent to server
+    lastEmitTime = now;
+  }
+
   lastX = pos.x; lastY = pos.y;
   e.preventDefault();
 }
@@ -417,6 +468,7 @@ function updateTimer(t) {
 // ─── Chat / Guesses ───────────────────────────────────────────────────────────
 
 function sendGuess() {
+  if (isDrawing) return; // drawer cannot guess
   const input = document.getElementById('guess-input');
   const msg = input.value.trim();
   if (msg) {
