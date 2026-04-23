@@ -125,19 +125,22 @@ function startRound(io, roomCode) {
 }
 
 // CS323: ATOMIC ROUND TRANSITION
-// The room is locked immediately when a round ends.
-// Any guess events arriving after this point (network lag, etc.) are dropped.
+// Called either by timer expiry (lock=false) or by all-guessed (lock=true).
+// In both cases we want to proceed — the guard only blocks truly duplicate calls
+// that arrive after the state has already moved to 'between'.
 function resolveRoundEnd(io, roomCode) {
   const room = getRoom(roomCode);
   if (!room) return;
-  if (room.locked) return; // already transitioning, ignore duplicate calls
+  // Guard against duplicate calls (e.g. timer fires just as last guess lands)
+  // We check state rather than just the lock, because handleGuess arrives locked.
+  if (room.state === 'between' || room.state === 'gameover') return;
 
-  // ── ACQUIRE LOCK ──────────────────────────────────────────────────────────
+  // ── ACQUIRE LOCK (or confirm it is already held) ───────────────────────────
   room.locked = true;
   room.state = 'between';
   clearInterval(room.timer);
 
-  console.log(`[Round] Room ${roomCode} | Round ${room.round} ended | Word was: "${room.currentWord}" | locked=true`);
+  console.log(`[Round] Room ${roomCode} | Round ${room.round} ended | Word was: "${room.currentWord}"`);
 
   io.to(roomCode).emit('round-end', {
     word: room.currentWord,
@@ -199,7 +202,7 @@ function handleGuess(io, socket, roomCode, message) {
     player.score += 100 + bonus;
     room.players[room.currentDrawer].score += 30;
 
-    console.log(`[Guess] Room ${roomCode} | ${player.name} guessed correctly! (+${100 + bonus} pts) | locked=true`);
+    console.log(`[Guess] Room ${roomCode} | ${player.name} guessed correctly! (+${100 + bonus} pts)`);
 
     io.to(roomCode).emit('correct-guess', {
       playerId: socket.id,
@@ -207,15 +210,18 @@ function handleGuess(io, socket, roomCode, message) {
       players: getPublicState(room).players
     });
 
-    // ── RELEASE LOCK ──────────────────────────────────────────────────────────
-    room.locked = false;
-
-    // Check if all non-drawers have guessed
+    // Check if ALL non-drawers have now guessed correctly
     const nonDrawers = Object.keys(room.players).filter(id => id !== room.currentDrawer);
     if (room.correctGuessers.size >= nonDrawers.length) {
+      // Keep lock held — resolveRoundEnd will handle the rest atomically
+      // CS323: All players guessed — end the round immediately, don't wait for timer
       clearInterval(room.timer);
-      // CS323: All players guessed — trigger atomic round end
+      console.log(`[Round] Room ${roomCode} | All players guessed — ending round early`);
       resolveRoundEnd(io, roomCode);
+    } else {
+      // More players still guessing — release lock so others can submit
+      // ── RELEASE LOCK ────────────────────────────────────────────────────────
+      room.locked = false;
     }
   } else {
     const isClose = levenshtein(message.toLowerCase(), room.currentWord.toLowerCase()) <= 2;
